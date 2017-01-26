@@ -1,70 +1,121 @@
 """
 Example of a Windows service implemented in Python.
 
-The service depends on the `pywin32` Python package. This module is
-modeled primarily after the demonstration modules `pipeTestService`
-and `serviceEvents` distributed with that package. Additional
-information concerning Python implementations of Windows services
-was gleaned from various blog and Stack Overflow postings.
-Information about Windows services themselves is available from
-[MSDN](http://msdn.microsoft.com).
+This module implements a simple Windows service, and can be invoked as
+a script with various arguments to install, start, stop, update, remove,
+etc. the service. The script (but not the service) must run with
+administrator privileges.
 
-This file is a script that can be invoked with various arguments to
-install, start, stop, update, remove, etc. its service. The script
-must run with administrator privileges. Some example command lines
-are:
+The service logs messages when it starts and stops, and every five seconds
+while running. You can see the messages using the Windows Event Viewer
+(suggestion: filter for messages from the source "Python Example"). The
+service does not do anything else.
 
-python example_service.py --startup auto install
-python example_service.py start
-python example_service.py stop
-python example_service.py remove
+This module depends on the `pywin32` Python package, and is modeled
+primarily after the demonstration modules `pipeTestService` and
+`serviceEvents` distributed with that package. Additional information
+concerning Python implementations of Windows services was gleaned from
+various blog and Stack Overflow postings. Information about Windows
+services themselves is available from [MSDN](http://msdn.microsoft.com).
 
-Invoke the script with no arguments for more detailed documentation.
+This module can be used either by invoking it as a script, for example:
 
-By default, when a service runs it logs into Windows as the special
-non-administrative user "LocalService". If the service is to run
-a Python script, the appropriate Python interpreter must be on that
-user's path. The only way I know of to accomplish this is to add
-the directory containing the appropriate python.exe to the *system*
-path. This is unsatisfactory, however, since it affects all users'
-paths and requires that all services implemented as Python scripts
-use the same Python interpreter. I would like to find a way to run
-various services under the LocalService account using the Python
-interpreters of different virtual environments. Perhaps py2exe can
-help?
-
-Purportedly one can run a service as a particular user with a
-command like:
-
-    python example_service.py --username \Bobo --password bobo install
-
-The "\" before the username indicates that the user account is a
-local account as opposed to a domain account. I have not been able
-to run a service in this way under my user account, however.
-Installation of the service seems to go fine, but when I try to
-start it I get the message:
-
-    Error starting service: The dependency service or group failed to start.
+    python example_service.py start
     
-Perhaps this is because my account is an administrator account?
+or by building a [pyinstaller](http://http://www.pyinstaller.org)
+executable from it and then invoking the executable, for example:
 
-TODO: Try to figure out how to run services that use different
-Python virtual environments. It would be fine to require that they be
-packaged using py2exe.
+    example_service.exe start
+    
+A typical sequence of commands to test the module's service is:
 
-TODO: Try to install and start a service under a non-administrator
-user account.
+    python example_service.py install
+    python example_service.py start
+    python example_service.py stop
+    python example_service.py remove
+
+For more complete usage information, invoke the script or the
+executable with the single argument "help".
+
+I chose to use pyinstaller rather than py2exe to create an executable
+version of this script since as of this writing (January 2017) py2exe
+does not yet support Python 3.5. pyinstaller is also cross-platform
+while py2exe is not. (That doesn't matter for Windows services, of
+course, but I would like something that I also can use with other,
+cross-platform Python code.)
+
+It appears that if the service of this module is installed with the
+command:
+
+    python example_service.py install
+    
+then in order for the service to be able to start, the path of the
+directory containing the Python interpreter that should be used for
+the service must be on the Windows system path, i.e. included the
+value of the system `Path` environment variable. Otherwise, if you
+try to start the service with:
+
+    python example_service.py start
+    
+the command will fail with a message like:
+
+    Error starting service: The service did not respond to the
+        start or control request in a timely fashion.
+
+Having to include the path of a particular Python environment on
+the system path seems overly restrictive. One workaround is to
+create an executable for the service using pyinstaller, and install
+and control the service using that executable. Since pyinstaller
+packages the executable with the appropriate Python environment,
+no system path modifications are needed, and different services
+can be packaged with different Python environments.
 """
 
 
-import time
+import sys
  
 import servicemanager
 import win32event
 import win32service
 import win32serviceutil
  
- 
+
+def _main():
+    
+    if len(sys.argv) == 1 and \
+            sys.argv[0].endswith('.exe') and \
+            not sys.argv[0].endswith(r'win32\PythonService.exe'):
+        # invoked as non-pywin32-PythonService.exe executable without
+        # arguments
+        
+        # We assume here that we were invoked by the Windows Service
+        # Control Manager (SCM) as a pyinstaller executable in order to
+        # start our service.
+        
+        # Initialize the service manager and start our service.
+        servicemanager.Initialize()
+        servicemanager.PrepareToHostSingle(ExampleService)
+        servicemanager.StartServiceCtrlDispatcher()
+    
+    else:
+        # invoked with arguments, or without arguments as a regular
+        # Python script
+  
+        # We support a "help" command that isn't supported by
+        # `win32serviceutil.HandleCommandLine` so there's a way for
+        # users who run this script from a pyinstaller executable to see
+        # help. `win32serviceutil.HandleCommandLine` shows help when
+        # invoked with no arguments, but without the following that would
+        # never happen when this script is run from a pyinstaller
+        # executable since for that case no-argument invocation is handled
+        # by the `if` block above.
+        if len(sys.argv) == 2 and sys.argv[1] == 'help':
+            sys.argv = sys.argv[:1]
+             
+        win32serviceutil.HandleCommandLine(ExampleService)
+
+
+    
 class ExampleService(win32serviceutil.ServiceFramework):
     
     
@@ -92,7 +143,7 @@ class ExampleService(win32serviceutil.ServiceFramework):
         
         while True:
                
-            result = win32event.WaitForSingleObject(self._stop_event, 3000)
+            result = win32event.WaitForSingleObject(self._stop_event, 5000)
               
             if result == win32event.WAIT_OBJECT_0:
                 # stop requested
@@ -102,9 +153,8 @@ class ExampleService(win32serviceutil.ServiceFramework):
               
             else:
                 # stop not requested
-                  
+                
                 log('is running')
-                time.sleep(1)
  
         log('has stopped')
         
@@ -143,5 +193,4 @@ class ExampleService(win32serviceutil.ServiceFramework):
  
 
 if __name__ == '__main__':
-    win32serviceutil.HandleCommandLine(ExampleService)
-    
+    _main()
