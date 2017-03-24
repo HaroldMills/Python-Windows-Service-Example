@@ -51,7 +51,7 @@ command:
     
 then in order for the service to be able to start, the path of the
 directory containing the Python interpreter that should be used for
-the service must be on the Windows system path, i.e. included the
+the service must be on the Windows system path, i.e. included in the
 value of the system `Path` environment variable. Otherwise, if you
 try to start the service with:
 
@@ -63,9 +63,9 @@ the command will fail with a message like:
         start or control request in a timely fashion.
 
 Having to include the path of a particular Python environment on
-the system path seems overly restrictive. One workaround is to
-create an executable for the service using pyinstaller, and install
-and control the service using that executable. Since pyinstaller
+the system path is undesirable. One workaround is to create an
+executable for the service using pyinstaller, and install and
+control the service using that executable. Since pyinstaller
 packages the executable with the appropriate Python environment,
 no system path modifications are needed, and different services
 can be packaged with different Python environments.
