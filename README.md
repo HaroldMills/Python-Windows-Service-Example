@@ -9,8 +9,8 @@ The command for building the service is:
 
         pyinstaller example_service.spec
         
-and should be issued from the root repo directory. The built service will
-be in the directory `build\example_service`.
+and should be issued from the root repo directory. PyInstaller will
+place the built service in the directory `build\example_service`.
 
 To install and start the service, issue the commands:
 
@@ -20,10 +20,10 @@ To install and start the service, issue the commands:
 from the `build\example_service` directory. *Note that the commands
 must be issued from a command prompt that was run as administrator.*
 
-To stop and uninstall the service, issue the commands:
+To stop and remove the service, issue the commands:
 
         example_service.exe stop
         example_service.exe remove
         
-again from an administrator command prompt and from the
-`build\example_service` directory.
+As above, the commands must be issued from the `build\example_service`
+directory and from an administrator command prompt.
