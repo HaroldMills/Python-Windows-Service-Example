@@ -79,6 +79,8 @@ can be packaged with different Python environments.
 """
 
 
+from logging import Formatter, Handler
+import logging
 import sys
  
 import servicemanager
@@ -88,6 +90,8 @@ import win32serviceutil
  
 
 def _main():
+    
+    _configure_logging()
     
     if len(sys.argv) == 1 and \
             sys.argv[0].endswith('.exe') and \
@@ -123,6 +127,23 @@ def _main():
 
 
     
+def _configure_logging():
+    
+    formatter = Formatter('%(message)s')
+    
+    handler = _Handler()
+    handler.setFormatter(formatter)
+    
+    logger = logging.getLogger()
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    
+
+class _Handler(Handler):
+    def emit(self, record):
+        servicemanager.LogInfoMsg(record.getMessage())
+        
+    
 class ExampleService(win32serviceutil.ServiceFramework):
     
     
@@ -144,9 +165,7 @@ class ExampleService(win32serviceutil.ServiceFramework):
     
     def SvcDoRun(self):
         
-        log = self._log_info_message
-        
-        log('has started')
+        _log('has started')
         
         while True:
                
@@ -155,22 +174,17 @@ class ExampleService(win32serviceutil.ServiceFramework):
             if result == win32event.WAIT_OBJECT_0:
                 # stop requested
                   
-                log('is stopping')
+                _log('is stopping')
                 break
               
             else:
                 # stop not requested
                 
-                log('is running')
+                _log('is running')
  
-        log('has stopped')
+        _log('has stopped')
         
         
-    def _log_info_message(self, fragment):
-        servicemanager.LogInfoMsg(
-            'The {} service {}.'.format(self._svc_name_, fragment))
- 
- 
     def SvcOtherEx(self, control, event_type, data):
         
         # See the MSDN documentation for "HandlerEx callback" for a list
@@ -180,13 +194,11 @@ class ExampleService(win32serviceutil.ServiceFramework):
         # `SERVICE_CONTROL_SHUTDOWN` since it seems that we can't log
         # info messages when handling the latter.
         
-        log = self._log_info_message
-        
         if control == win32service.SERVICE_CONTROL_PRESHUTDOWN:
-            log('received a pre-shutdown notification')
+            _log('received a pre-shutdown notification')
             self._stop()
         else:
-            log('received an event: code={}, type={}, data={}'.format(
+            _log('received an event: code={}, type={}, data={}'.format(
                     control, event_type, data))
     
 
@@ -199,5 +211,10 @@ class ExampleService(win32serviceutil.ServiceFramework):
         self._stop()
  
 
+def _log(fragment):
+    message = 'The {} service {}.'.format(ExampleService._svc_name_, fragment)
+    logging.info(message)
+    
+    
 if __name__ == '__main__':
     _main()
