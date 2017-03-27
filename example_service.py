@@ -6,6 +6,13 @@ a script with various arguments to install, start, stop, update, remove,
 etc. the service. The script (but not the service) must run with
 administrator privileges.
 
+To run a Windows command prompt that has administrator privileges,
+right-click on it in a Windows Explorer window (the path of the program
+is C:\Windows\System32\cmd.exe) and select "Run as administrator". Or, if
+you have installed the command prompt in the Windows taskbar, right click
+on its icon, right-click on "Command Prompt" in the resulting menu, and
+select "Run as administrator".
+
 The service logs messages when it starts and stops, and every five seconds
 while running. You can see the messages using the Windows Event Viewer
 (suggestion: filter for messages from the source "Python Example"). The
@@ -22,7 +29,7 @@ This module can be used either by invoking it as a script, for example:
 
     python example_service.py start
     
-or by building a [pyinstaller](http://http://www.pyinstaller.org)
+or by building a [PyInstaller](http://http://www.pyinstaller.org)
 executable from it and then invoking the executable, for example:
 
     example_service.exe start
@@ -37,9 +44,9 @@ A typical sequence of commands to test the module's service is:
 For more complete usage information, invoke the script or the
 executable with the single argument "help".
 
-I chose to use pyinstaller rather than py2exe to create an executable
+I chose to use PyInstaller rather than py2exe to create an executable
 version of this script since as of this writing (January 2017) py2exe
-does not yet support Python 3.5. pyinstaller is also cross-platform
+does not yet support Python 3.5. PyInstaller is also cross-platform
 while py2exe is not. (That doesn't matter for Windows services, of
 course, but I would like something that I also can use with other,
 cross-platform Python code.)
@@ -64,8 +71,8 @@ the command will fail with a message like:
 
 Having to include the path of a particular Python environment on
 the system path is undesirable. One workaround is to create an
-executable for the service using pyinstaller, and install and
-control the service using that executable. Since pyinstaller
+executable for the service using PyInstaller, and install and
+control the service using that executable. Since PyInstaller
 packages the executable with the appropriate Python environment,
 no system path modifications are needed, and different services
 can be packaged with different Python environments.
@@ -89,7 +96,7 @@ def _main():
         # arguments
         
         # We assume here that we were invoked by the Windows Service
-        # Control Manager (SCM) as a pyinstaller executable in order to
+        # Control Manager (SCM) as a PyInstaller executable in order to
         # start our service.
         
         # Initialize the service manager and start our service.
@@ -103,10 +110,10 @@ def _main():
   
         # We support a "help" command that isn't supported by
         # `win32serviceutil.HandleCommandLine` so there's a way for
-        # users who run this script from a pyinstaller executable to see
+        # users who run this script from a PyInstaller executable to see
         # help. `win32serviceutil.HandleCommandLine` shows help when
         # invoked with no arguments, but without the following that would
-        # never happen when this script is run from a pyinstaller
+        # never happen when this script is run from a PyInstaller
         # executable since for that case no-argument invocation is handled
         # by the `if` block above.
         if len(sys.argv) == 2 and sys.argv[1] == 'help':
