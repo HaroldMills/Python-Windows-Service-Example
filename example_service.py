@@ -33,49 +33,36 @@ or by building a [PyInstaller](http://http://www.pyinstaller.org)
 executable from it and then invoking the executable, for example:
 
     example_service.exe start
-    
-A typical sequence of commands to test the module's service is:
 
-    python example_service.py install
-    python example_service.py start
-    python example_service.py stop
-    python example_service.py remove
-
-For more complete usage information, invoke the script or the
-executable with the single argument "help".
-
-I chose to use PyInstaller rather than py2exe to create an executable
-version of this script since as of this writing (January 2017) py2exe
-does not yet support Python 3.5. PyInstaller is also cross-platform
-while py2exe is not. (That doesn't matter for Windows services, of
-course, but I would like something that I also can use with other,
-cross-platform Python code.)
-
-It appears that if the service of this module is installed with the
-command:
-
-    python example_service.py install
-    
-then in order for the service to be able to start, the path of the
-directory containing the Python interpreter that should be used for
-the service must be on the Windows system path, i.e. included in the
-value of the system `Path` environment variable. Otherwise, if you
-try to start the service with:
-
-    python example_service.py start
-    
-the command will fail with a message like:
+However, invoking the module as a script appears to require that the
+path of the directory containing the Python interpreter that should be
+used for the service be on the Windows system path, i.e. included in the
+value of the system `Path` environment variable. If it is not, then the
+start command will fail with a message like:
 
     Error starting service: The service did not respond to the
         start or control request in a timely fashion.
 
-Having to include the path of a particular Python environment on
-the system path is undesirable. One workaround is to create an
-executable for the service using PyInstaller, and install and
-control the service using that executable. Since PyInstaller
-packages the executable with the appropriate Python environment,
-no system path modifications are needed, and different services
-can be packaged with different Python environments.
+Using the module as a PyInstaller executable has no such drawback,
+since the executable includes a Python interpreter and all needed
+packages, so we recommend that approach.
+
+A typical sequence of commands to test the service of this module is:
+
+    example_service.exe install
+    example_service.exe start
+    example_service.exe stop
+    example_service.exe remove
+
+For more complete usage information, invoke the executable with the
+single argument "help".
+
+I chose to use PyInstaller rather than py2exe to create an executable
+version of this module since as of this writing (January 2017) py2exe
+does not yet support Python 3.5. PyInstaller is also cross-platform
+while py2exe is not. (That doesn't matter for Windows services, of
+course, but I would like something that I also can use with other,
+cross-platform Python code.)
 """
 
 
